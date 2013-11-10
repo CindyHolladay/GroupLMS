@@ -1,0 +1,39 @@
+.basicfont {font-family:arial;font-size:12px;}
+.link {color:blue;text-decoration:underline;cursor:pointer;} 
+.plain {text-decoration:none;}
+.point{cursor:pointer;}
+.whitelink {color:white;text-decoration:underline;cursor:pointer;}
+.menuDivider {padding-bottom:10px;border-bottom:1px solid #dddddd;}
+.tdDivider {border-bottom:1px solid #cccccc;}
+.menuItem {padding-left:5px;padding-right:5px;background:#dedede;}
+.disabledText {color:#666666;}
+.altRowColor {background:#ffffcc;}
+.adjustTreeContainer {font-family:verdana;font-size:85%;color:blue;cursor:pointer;display:none;}
+.hdr {background:#6f6f6f;padding:5px;font-weight:bold;color:white;}
+.assetDiv {width:400px;height:425px;margin-top:5px;overflow:auto;border:1px solid gray;background:#ffffff;}
+.pad15 {padding-left:15px;}
+.debugTree {display:none;}
+/* #dedede */
+#treeBox  {border:1px solid navy; width:400px;height:450px;overflow:auto;}
+#template_container {border:1px solid #999999; width:375px;height:450px;overflow:auto;}
+#divasset_welcome P {font-size:12px;}
+#divasset_welcome LI {font-size:12px;margin-top:8px;}
+OL, UL {margin-top:5px;}
+/* ---- for handling template groups --- */
+BLOCKQUOTE {margin-top:5px;}
+P {margin-top:5px;}
+.tabhdr {padding:2px;padding-left:5px;font-weight:bold;color:white;cursor:pointer;white-space:nowrap;}
+.tabtd {width:15px;}
+.taboff {background:#808080;} 
+.tabselected {background:#cc0000;}
+.highlightBg {background:#cc0000;}
+.wizardBg {background:#ddddff;}
+.wizardLighterBg {background:#eeeeff;}
+.tabsConnectingLine {border-top:2px solid #cc0000;}
+#tabHelp {background:#ffffff;text-align:right;padding-right:10px;}
+.templateItem {padding-left:60px;}
+.templateAnswer {margin-top:5px;background:#ffffff;border:1px solid #aaaaaa;padding:5px;display:none;padding-left:5px;}
+.trDivider {border-top:1px solid #999999;}
+.trLastDivider {border-bottom:1px solid #999999;}
+.tableStyle {width:410px;}
+	

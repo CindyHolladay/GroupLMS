@@ -1,0 +1,35 @@
+<?xml version='1.0' ?>
+<menu id="0">
+		<item text="New Assignment Folder" img="folderClosed.gif"  id="edit_addGroup"/>	
+		<item text="Add Group of Courses" img="groupAsset.png" id="edit_addCourseGroup" />
+		<item text="Add Group of Trainees" img="groupMember.png" id="edit_addTraineeGroup" />
+		<item text="Assign Trainee" img="member.png"  id="edit_addMember"/>	
+		<item text="Assign Course" img="course.gif"  id="edit_addCourse"/>
+		<item text="Assign Custom Training" img="customtraining.gif"  id="edit_addCustomTraining"/>		
+		<item text="Assign Document" img="document.gif"  id="edit_addDocument"/>
+		<item text="Assign Company Members" img="company.gif"  id="edit_addCompany"/>
+		<item id="sep1" type="separator"/>		
+		<item text="Copy" img="blank.gif"  id="edit_copy"/>
+		<item text="Move" img="blank.gif"  id="edit_move"/>	
+		<item text="Paste" img="blank.gif"  id="edit_copypaste"/>
+		<item text="Drop" img="blank.gif"  id="edit_movedrop"/>		
+		<item text="Cancel" img="blank.gif"  id="cancel_move"/>
+		<item text="Cancel" img="blank.gif"  id="cancel_copy"/>
+		<item text="Delete" img="blank.gif"  id="edit_delete"/>
+		<item id="sep2" type="separator"/>
+		<item text="Expand All" img="blank.gif"  id="open_tree"/>
+		<item text="Rename Folder" img="blank.gif"  id="edit_rename"/>
+		<item text="Search" img="blank.gif"  id="edit_search"/>
+		<item text="Sort Tree" img="blank.gif"  id="edit_sort"/>
+		<item id="sep3" type="separator"/>
+		<item id="schedules" text="Scheduling...">
+			<item text="View Applied Training Schedule" img="blank.gif"  id="view_schedule_applied"/>
+			<item text="Set Training Schedule" img="blank.gif"  id="option_schedule"/>
+		</item>
+		<item text="View Training Profile" img="blank.gif"  id="view_member"/>
+		<item text="View Company Profile" img="blank.gif"  id="view_company"/>
+		<item text="View Course Profile" img="blank.gif"  id="view_course"/>
+		<item text="View Custom Training Profile" img="blank.gif"  id="view_customtraining"/>
+		<item text="View Content" img="blank.gif"  id="view_document"/>
+		<item text="View Company Profiles" img="blank.gif"  id="view_reseller"/>
+</menu>

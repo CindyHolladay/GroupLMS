@@ -1,0 +1,1218 @@
+	
+<!-- ===========================================================
+     Reminder Email Forms
+	 -----------------------------------------------------------
+	 For use on:
+				Schedule Training - by Trainee
+				Schedule Training - by Course
+				Schedule Training by Groups
+				Schedule CSCTraining - by Trainee
+				Schedule CSCTraining - by Course
+				Reminder Email Options (new page)
+	------------------------------------------------------------
+	dependencies:
+	http://www.safetycertified.com/scripts/thirdparty/jquery-1.4.2.min.js
+	/common/plugins/jquery.blockUI.js
+	============================================================
+	C Holladay, June 2011, #689 Enable badger email reminders
+	------------------------------------------------------------
+-->
+	<style type="text/css">
+	.emailoptions .div100 {padding:5px;}
+	.emailoptions .div101 {padding:0 5px 5px 5px;}
+	.emailoptions .divIdent {margin-left:25px;}
+	.emailoptions .fldset100 {width:320px;}
+	.emailoptions .btnDiv {width:300px;text-align:center;}
+	.highlightTextbox {background:#ffff66;}
+	.deleteEmails {padding:0px 5px 5px 5px;margin-bottom:5px;margin-top:-5px;}
+	.msgEmailOptions {color:red;display:none;font-size:12px;margin-bottom:10px;margin-top:-10px;}
+	.msgEmailOptionsShown {color:red;font-size:11px;}
+	</style>
+	<script type="text/javascript">
+	var ReminderEmailsObj = {
+		action:			"",
+		containerId: 	"divasset_EmailOptions",   //default container div on group tree, reset if necessary
+		objId:  		"",
+		format:			"fieldset",  //this can be set to "custom" and then set the custom function below
+		customHtml:		"",
+		arrEmailForms:	[],
+		arrEmailTemplateId: [],
+		arrFormValues:	[],
+		arrDefaultValues: [],
+		buildAllForms: true,
+		allFormsBuilt: false,
+		serviceName:	"",
+		assetType:		"",
+		assetId:		"",
+		assetIdList:	"",
+		customerType:	"",
+		overrideCustType:"",
+		customerId:		"",
+		overrideCustId: "",
+		customerIdList:	"",
+		overrideCustIdList: "",
+		idListSize:		850,
+		context:		"",
+		templateId:		[],
+		enabled:		[],
+		valueHours:		[],
+		notify:	    	[],
+		priority:		[],
+		isGlobalView:	false,
+		applyToChildren:false,
+		courseId:		"",
+		parmList:		[],
+		testing:		"",
+		rownum:			"",
+		debugMode:		"off",
+		pageLevelView:	"assignment",
+		errMsgDivId:	"#divTreeMsg",  //this can be reset to the page div being used
+		errMsgString:	"",
+		extraMsgHtml:	"<div id=\"msgEmailOptions\" class=\"msgEmailOptions\">#text</div>",
+		extraMsgHtmlShown:	"<div class=\"msgEmailOptionsShown\">#text</div>",
+		clearMsgAreas: function() {
+			this.errMsgString = "";
+			//clear msg areas
+			if (typeof $.clearMsg == "function") $.clearMsg("");
+			else if (typeof $(ReminderEmailsObj.errMsgDivId) == "object") $(ReminderEmailsObj.errMsgDivId).html("");
+			//clear inheritance area
+			if (typeof $('#msgEmailOptions') != "undefined") {
+				$('#msgEmailOptions').html("");
+				$('#msgEmailOptions').hide();
+			}
+			//clear report area
+			$('#divEmailReporting').html("");
+			$('#divEmailReporting').hide();
+		},
+		getEmailOptionsForms: function() {
+			ReminderEmailsObj.action = "get";
+			//TODO: call webservice get the default list of emails and their attributes
+			this.arrEmailForms = [{"id":4,"selIdx":30,"label":"Standard Reminder Email","label1":"Send Standard Reminder Email","label2":"days prior to due date"},
+						{"id":7,"selIdx":5,"label":"Urgent Reminder Email","label1":"Send Urgent Reminder Email","label2":"days prior to due date"},
+						{"id":5,"selIdx":7,"label":"Past Due Reminder Emails","label1":"Send Past Due Reminder Emails every","label2":"days past due date"}];
+			//TODO: collect EmailTemplateId s
+			this.arrEmailTemplateId = ["4","7","5"];
+			this.arrDefaultValues = [{"EmailTemplateId":4,"Interval":720,"NotifyManager":true},
+					{"EmailTemplateId":7,"Interval":120,"NotifyManager":true},
+					{"EmailTemplateId":5,"Interval":168,"NotifyManager":true}];
+			//
+			//in callback: replace this with object name
+			if (this.buildAllForms) {
+				this.buildEmailOptionsForm(this.containerId);
+				this.allFormsBuilt = true;
+			}
+			
+			if (makeTandemAjaxCalls.status=="inProgress") {
+				makeTandemAjaxCalls.callTandemAjax();
+			} else  {
+				ReminderEmailsObj.tandemComplete();
+			}
+		},
+		getValuesForEmailOptions: function() {
+				this.getReminderEmailIntervalsForCustomerListByAssetType();
+		},
+		getReminderEmailIntervalsForCustomerListByAssetType: function() {
+				//this is the get for the full form display with Save/Remove button
+				ReminderEmailsObj.action="get";
+				if (this.trialSiteRoadblock(false)) return false;
+				var formIdList = this.arrEmailTemplateId.join();
+				var getAssetType = this.assetType;
+				//get the zero record for this for reseller/company/member level options
+				if (this.assetType=="" || this.assetType=="both") getAssetType = "CustomTraining"; 
+				this.arrFormValues = [];
+				var parms = {CustomerIdList: "\"" + this.customerIdList + "\"",  
+							 CustomerType: "\"" + this.customerType + "\"", 
+							 AssetIdList: "\"" + this.assetIdList + "\"",
+							 AssetType: "\"" + getAssetType + "\"",
+							 TemplateIdList: "\"" + formIdList + "\""
+						   };
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				if (this.debugMode=="on") {
+					msg ="IN getReminderEmailIntervalsForCustomerListByAssetType\n" +
+							"\nCustomerIdList: " + parms.CustomerIdList + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\nAssetIdList: " + parms.AssetIdList + 
+							"\nAssetType:" + parms.AssetType  +
+							"\nTemplateIDList:" + parms.TemplateIdList;
+					if (!confirm(msg + "\n\nCONTINUE TO DISPLAY DEBUG POPUPS?")) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Retrieving Email Settings...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/GetReminderEmailIntervalsForCustomerListByAssetType",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") {
+							alert("IN callback from GetReminderEmailIntervalsForCustomerListByAssetType\n\n" + "callback msg." + msg);
+						}
+						if (msg!= "[]") { 
+							var returnArr = jQuery.parseJSON(msg);
+							if (!$.isArray(returnArr)) {
+								ReminderEmailsObj.errMsgString += ("#Error in retrieve settings for Email Reminders: " + jQuery.parseJSON(msg));
+								ReminderEmailsObj.tandemComplete();
+							} else {
+								if (ReminderEmailsObj.assetId=="0" && ReminderEmailsObj.assetIdList=="0") {
+									//filter out the extra entries, as these are the global settings for a memberId, companyId, resellerId
+									var thisArr = [];
+									$.each(returnArr, function(idx, val) {
+										if (val.AssetId=="0") thisArr.push(val);  //only keep the 0 assetId entries
+									});
+									returnArr = thisArr;
+								} 
+								//
+								if (ReminderEmailsObj.format=="fieldset") {
+									//set the input form values
+									var lookupType = "";
+									$.each(returnArr, function(idx,val) {
+										lookupType = val.LookupType;
+										if (val.EnableReminder.toString()=="true") {
+											ReminderEmailsObj.setupEmailFieldset(val.EnableReminder,val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+										}
+									});
+									if (lookupType!="") {
+										//alert("lookupType is "+ lookupType);
+										$('#msgEmailOptions').html(ReminderEmailsObj.translateLookupType(lookupType));
+										$('#msgEmailOptions').show();
+									} else {
+										$('#msgEmailOptions').html(ReminderEmailsObj.translateLookupType(lookupType));
+										$('#msgEmailOptions').hide();
+									}	
+								} else {
+									//format custom output for display only
+									ReminderEmailsObj.customHtml = "";
+									var customHtml = "";
+									var lookupType = "";
+									var thisId = "";
+									$.each(returnArr, function(idx,val) {
+										lookupType = val.LookupType;
+										if (val.EnableReminder.toString()=="true") {
+											if (typeof emVars != "undefined") { //we are on a page with table rows, see handleTableRows.js
+												if (emVars.pageServiceName=="byCustomer") {
+													customHtml = ReminderEmailsObj.setupCustomValuesFormat(val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+													try_handleViewOptionsCallback(customHtml,val.AssetId,lookupType);
+												} else if (emVars.pageServiceName=="byAsset") {
+													customHtml = ReminderEmailsObj.setupCustomValuesFormat(val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+													try_handleViewOptionsCallback(customHtml,val.CustomerId,lookupType);
+												}
+											}
+										}
+										/*
+										if (val.EnableReminder.toString()=="true") {
+											if (typeof emVars != "undefined") { //we are on a page with table rows, see handleTableRows.js
+												if (emVars.pageServiceName=="byCustomer") {
+													if (thisId!=val.AssetId) {
+														customHtml = "";
+													}
+													thisId = val.AssetId;
+													customHtml += ReminderEmailsObj.setupCustomValuesFormat(val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+													handleViewOptionsCallback(customHtml,val.AssetId,lookupType);
+												} else if (emVars.pageServiceName=="byAsset") {
+													if (thisId!=val.CustomerId) {
+														customHtml = "";
+													}
+													thisId = val.CustomerId;
+													customHtml += ReminderEmailsObj.setupCustomValuesFormat(val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+													handleViewOptionsCallback(customHtml,val.CustomerId,lookupType);
+												}
+											}
+										}
+										*/
+									});
+								}
+							}
+						} else {
+							//Return is [], could be a return from a delete method, show initialized form
+							if (ReminderEmailsObj.format=="fieldset") ReminderEmailsObj.setupDefaultFormValues();
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in retrieve settings for Email Reminders: " + jQuery.parseJSON(msg));
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		getReminderEmailIntervalsFor_TableRow: function(memberId,courseId) {
+				ReminderEmailsObj.action="get";
+				if (this.trialSiteRoadblock(false)) return false;
+				var formIdList = this.arrEmailTemplateId.join();
+				var getAssetType = this.assetType;
+				this.arrFormValues = [];
+				var parms = {CustomerIdList: "\"" + memberId + "\"",  
+							 CustomerType: "\"" + this.customerType + "\"", 
+							 AssetIdList: "\"" + courseId + "\"",
+							 AssetType: "\"" + getAssetType + "\"",
+							 TemplateIdList: "\"" + formIdList + "\""
+						   };
+						   
+				if (this.debugMode=="on" && this.testing!="off") {
+					msg ="IN getReminderEmailIntervalsFor_TableRow\n" +
+							"\nCustomerIdList: " + parms.CustomerIdList + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\nAssetIdList: " + parms.AssetIdList + 
+							"\nAssetType:" + parms.AssetType  +
+							"\nTemplateIDList:" + parms.TemplateIdList;
+					if (!confirm(msg + "\n\nCONTINUE TO DISPLAY DEBUG POPUPS?")) ReminderEmailsObj.testing="off";
+					showTesting(msg);
+				}
+				//try {$.blockUI({message:this.setWaitMsg("Retrieving Email Settings...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/GetReminderEmailIntervalsForCustomerListByAssetType",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on" && ReminderEmailsObj.testing!="off") {
+							alert("IN callback from GetReminderEmailIntervalsFor_TableRow\n\n" + "callback msg." + msg);
+						}
+						if (msg!= "[]") { 
+							var returnArr = jQuery.parseJSON(msg);
+							if (!$.isArray(returnArr)) {
+								ReminderEmailsObj.errMsgString += ("#Error in retrieve settings for Email Reminders: " + jQuery.parseJSON(msg));
+								ReminderEmailsObj.tandemComplete();
+							} else {
+									//format custom output for display only
+									ReminderEmailsObj.customHtml = "";
+									var customHtml = "";
+									var lookupType = "";
+									$.each(returnArr, function(idx,val) {
+										lookupType = val.LookupType;
+										if (val.EnableReminder.toString()=="true") {
+											customHtml += ReminderEmailsObj.setupCustomValuesFormat(val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+											if (typeof emVars != "undefined") { //we are on a page with table rows, see handleTableRows.js
+												if (emVars.pageServiceName=="byCustomer") {
+													handleViewOptionsCallback(customHtml,val.AssetId,lookupType);
+												} else if (emVars.pageServiceName=="byAsset") {
+													handleViewOptionsCallback(customHtml,val.CustomerId,lookupType);
+												}
+											}
+										}
+									});
+							}
+						} 
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in retrieve settings for Email Reminders: " + jQuery.parseJSON(msg));
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		setupCustomValuesFormat: function(formId,daysValue,notifyValue) {
+			alert("custom values not formatted");
+		},
+		setupCustomValuesCallback: function(obj) {
+			alert("custom values callback not coded");
+		},
+		setupDefaultFormValues: function() {
+			$.each(ReminderEmailsObj.arrDefaultValues, function(idx,val) {
+					var obj =document.getElementsByName("radEmail_" + val.EmailTemplateId);
+					ReminderEmailsObj.setupEmailFieldset(false,val.EmailTemplateId,val.Interval,val.NotifyManager.toString());
+					var obj =document.getElementsByName("radEmail_" + val.EmailTemplateId); //Ex: radEmail_5
+					var obj2 = document.getElementById("txtDaysEmail_" + val.EmailTemplateId); //Ex: txtDaysEmail_5
+					var obj3 = document.getElementsByName("radEmailNotify_" + val.EmailTemplateId); //Ex: radEmailNotify_5
+					if (typeof obj === "object") {
+							obj[0].checked = true;
+							obj2.disabled = true;
+							obj3[0].checked = true;
+							obj3[0].disabled = true;
+							obj3[1].disabled = true;
+					}
+			});
+		},
+		//-------------------------------------------------------
+		// setupEmailFieldset
+		// Use this to initialize the Reminder Email form
+		// Use this to set values in the Reminder Email form
+		//-------------------------------------------------------
+		setupEmailFieldset: function(enabled,formId,daysValue,notifyValue) {
+		    //alert(enabled + "," + formId + "," + daysValue + "," + notifyValue);
+			var obj =document.getElementsByName("radEmail_" + formId); //Ex: radEmail_1
+			if (enabled.toString()=="true") {
+				obj[1].checked = true ;
+			} else { obj[0].checked = true};
+			var obj2 = document.getElementById("txtDaysEmail_" + formId); //Ex: txtDaysEmail_1
+			//set days textbox
+			if (typeof obj === "object") {
+				if (typeof obj2 === "object") {
+					if (daysValue=="0" || daysValue=="") {
+						obj2.value = "0";
+					} else { 
+						try {obj2.value = this.calculateDaysFromHours(daysValue);} catch (e) {obj2.value = "0";}
+					}
+					if (obj[0].checked) {  //Do Not Send
+						obj2.disabled = true;
+					} else { obj2.disabled = false;}
+				}
+			}
+			//set notify manager
+			var obj3 = document.getElementsByName("radEmailNotify_" + formId); //Ex: radEmailNotify_1
+			if (typeof obj3 === "object") {
+				if (obj[0].checked) {  //Do Not Send
+					obj3[0].checked = true;  //default "yes"
+					obj3[1].checked = false;
+					obj3[0].disabled = true;
+					obj3[1].disabled = true;
+				} else {
+					obj3[0].disabled = false;
+					obj3[1].disabled = false;
+					notifyValue.toLowerCase() == "true" ? obj3[0].checked = true : obj3[1].checked = true;
+				}
+			}
+		},
+		//-----------------------------------------------
+		// buildEmailOptionsForm()
+		// Get list of email types and their attributes
+		// Construct forms for each email type inside divId
+		//-----------------------------------------------
+		buildEmailOptionsForm: function(divId) {
+			//alert("TESTING\n" + "\nserviceName=" + this.serviceName + "\ncustomerType=" + this.customerType + "\nassetType=" + this.assetType);
+			var wrapperDIV = "<div class=\"emailoptions emailoptionsThisPage\">";
+			var strHTML = "";
+			var buttonHTML = "<div class=\"btnDiv\">" +
+				"<input type=\"button\" style=\"width:100px;\" id=\"saveEmailOptions\" name=\"saveEmailOptions\" value=\"Save Options\">&nbsp;&nbsp;" +
+				"<input type=\"button\" style=\"width:115px;margin-left:15px;\"  id=\"deleteEmailOptions\" name=\"deleteEmailOptions\" value=\"Remove Settings\">&nbsp;&nbsp;";
+				if (this.pageLevelView=="assignment") {
+					buttonHTML += "<input type=\"button\" style=\"width:55px;\" id=\"cancelEmailOptions\" name=\"cancelEmailOptions\" value=\"Cancel\">"
+				}
+				buttonHTML += "</div>";
+			var extraMsgHtml = this.extraMsgHtml;
+			for (EAIdx=0;EAIdx<this.arrEmailForms.length;EAIdx++) {
+				str = document.getElementById("EmailOptions_HtmlTemplate").innerHTML;
+				str = str.replace(/#EmailOptionsLabel2/g,this.arrEmailForms[EAIdx].label2);
+				str = str.replace(/#EmailOptionsLabel1/g,this.arrEmailForms[EAIdx].label1);
+				str = str.replace(/#EmailOptionsLabel/g,this.arrEmailForms[EAIdx].label);
+				str = str.replace(/#EmailOptionsDaysValue/g,this.arrEmailForms[EAIdx].selIdx);
+				strHTML += str.replace(/#EmailId/g,this.arrEmailForms[EAIdx].id);
+				if (EAIdx == (this.arrEmailForms.length-1)) {
+					document.getElementById(divId).innerHTML = wrapperDIV + strHTML + extraMsgHtml + buttonHTML + "</div>";
+				}
+			}
+		},
+		//-----------------------------------------------------
+		// toggleEmailFieldset
+		// Handle Reminder Email form radio buttons for
+		//    "no do not send" and "send .... paramaters"
+		//-----------------------------------------------------
+		toggleEmailFieldset: function(id) {
+			var obj =document.getElementsByName("radEmail_" + id); //Ex: radEmail_1
+			var obj2 = document.getElementById("txtDaysEmail_" + id); //Ex: txtDaysEmail_1
+			var obj3 = document.getElementsByName("radEmailNotify_" + id); //Ex: radEmailNotify_1
+			if (typeof obj === "object") {
+				if (obj[0].checked==true) {
+					obj2.disabled = true;
+					obj3[0].checked = true;
+					obj3[0].disabled = true;
+					obj3[1].disabled = true;
+
+				} else {
+					obj2.disabled = false;
+					obj3[0].disabled = false;
+					obj3[1].disabled = false;
+				}
+			}
+		},
+		deleteReminderEmails: function() {
+			var str = "";
+			ReminderEmailsObj.action="Delete";
+			
+			ReminderEmailsObj.errMsgString = "";
+			if (typeof $.clearMsg == "function") $.clearMsg("");
+			else if (typeof $(ReminderEmailsObj.errMsgDivId) == "object") $(ReminderEmailsObj.errMsgDivId).html("");
+
+			var confirmMsg = "Removing these settings will restore reminder email settings "+
+							"\nfrom the company or parent company level, if they exist."+
+							"\n\nIf you wish to disable sending emails for this choice, " +
+							"\nselect the 'Do Not Send' radio buttons on the form " +
+							"\nand click 'Save Options'\n\n\n" +
+							"Are you sure you want to remove these settings?"
+			if (this.applyToChildren || this.isGlobalView) {
+				confirmMsg = "WARNING: This action will remove all email reminder setting" +
+							"\nincluding any custom settings you may have previously applied." +
+							"\n\n"
+							confirmMsg;
+			}
+			if (!confirm(confirmMsg)) {
+				return false;
+			}
+			
+			var tandemAjaxCalls = "";
+			if ($.isArray(ReminderEmailsObj.arrEmailForms)) {
+					switch (ReminderEmailsObj.serviceName) {
+						case("byAsset"):
+							$.each(ReminderEmailsObj.arrEmailForms, function(idx, val) {
+								//if (idx==1) alert(ReminderEmailsObj.serviceName + "\nassetId:" + ReminderEmailsObj.assetId + "\ncustomerIdList:" + ReminderEmailsObj.customerIdList);
+								var idArr = ReminderEmailsObj.customerIdList.split(",");
+								var idCeiling = 1;
+								if ($common_isNumber(ReminderEmailsObj.idListSize) && ReminderEmailsObj.idListSize > 0) {
+									idCeiling = Math.ceil(idArr.length/ReminderEmailsObj.idListSize);
+								}
+								for (var ixc=1;ixc<idCeiling+1;ixc++) {
+									//delete all for this asset
+									tandemAjaxCalls += "ReminderEmailsObj.deleteEmailReminderForTrainingByCustomerList("+idx+","+idCeiling+","+ixc+")|";
+								}
+							});
+							if (ReminderEmailsObj.errMsgString.length>0) {
+								tandemAjaxCalls="";
+								ReminderEmailsObj.tandemComplete();
+							} else {
+								if (typeof emVars != "undefined") { //we are on a page handling table rows
+									if (ReminderEmailsObj.rownum=="0") {
+										//updating the options on all rows, show results all rows
+										tandemAjaxCalls += "openOptionsViewEachRow()|";
+									} else if (ReminderEmailsObj.rownum!="") {
+										//updating the options on this row, show results this row
+										tandemAjaxCalls += "viewOptionsClicked(" + ReminderEmailsObj.rownum + ")|";
+									}
+								} else {
+									tandemAjaxCalls += "ReminderEmailsObj.getValuesForEmailOptions()|";
+								}
+								makeTandemAjaxCalls.init();
+								makeTandemAjaxCalls.callString = tandemAjaxCalls + "ReminderEmailsObj.tandemComplete()";
+								makeTandemAjaxCalls.note = "reminderEmails";
+								if (makeTandemAjaxCalls.setup()) makeTandemAjaxCalls.callTandemAjax();
+							}
+							break;
+						case("byCustomer"):
+							//alert(ReminderEmailsObj.serviceName + "\ncustomerId:" + ReminderEmailsObj.customerId + "\nassetIdList:" + ReminderEmailsObj.assetIdList);
+							if (ReminderEmailsObj.assetIdList=="0") {
+								//delete all assets for this customer
+								tandemAjaxCalls += "ReminderEmailsObj.deleteAllEmailRemindersForTrainingByCustomer()|";
+								tandemAjaxCalls += "ReminderEmailsObj.getValuesForEmailOptions()|";
+								makeTandemAjaxCalls.init();
+								makeTandemAjaxCalls.callString = tandemAjaxCalls + "ReminderEmailsObj.tandemComplete()";
+								makeTandemAjaxCalls.note = "reminderEmails";
+								if (makeTandemAjaxCalls.setup()) makeTandemAjaxCalls.callTandemAjax();
+								
+							} else {  //we have specific assets for this customer
+								tandemAjaxCalls += "ReminderEmailsObj.deleteAllEmailRemindersForTrainingByAsset()|";
+								if (typeof emVars != "undefined") { //we are on a page handling table rows
+									if (ReminderEmailsObj.rownum=="0") {
+										//updating the options on all rows, show results all rows
+										tandemAjaxCalls += "openOptionsViewEachRow()|";
+									} else if (ReminderEmailsObj.rownum!="") {
+										//updating the options on this row, show results this row
+										tandemAjaxCalls += "viewOptionsClicked(" + ReminderEmailsObj.rownum + ")|";
+									}
+								}
+								makeTandemAjaxCalls.init();
+								makeTandemAjaxCalls.callString = tandemAjaxCalls + "ReminderEmailsObj.tandemComplete()";
+								makeTandemAjaxCalls.note = "reminderEmails";
+								if (makeTandemAjaxCalls.setup()) makeTandemAjaxCalls.callTandemAjax();
+							}
+							break;
+						default:
+							break;
+					}
+			} else {
+				alert("Reminder Emails settings have not been deleted, forms not found");
+			}
+		},
+		saveOptions: function() {
+			var ret = true;
+			ReminderEmailsObj.action = "Save";
+			if (this.trialSiteRoadblock(true)) return false;
+			
+			ReminderEmailsObj.errMsgString = "";
+			if (typeof $.clearMsg == "function") $.clearMsg("");
+			else if (typeof $(ReminderEmailsObj.errMsgDivId) == "object") $(ReminderEmailsObj.errMsgDivId).html("");
+			
+			if (this.applyToChildren || this.isGlobalView) {
+				confirmMsg = "WARNING: This action will apply these settings " +
+							"\nto all assignments, overwriting any previously" +
+							"\ncustomized email reminder settings that may have" + 
+							"\nbeen applied to individual assignments." +
+							"\n\nDo you wish to continue with this action?";
+				if (!confirm(confirmMsg)) {
+					return false;
+				}
+			}
+			
+			var str = "";
+			var tandemAjaxCalls = "";
+			ReminderEmailsObj.templateId = [];
+			ReminderEmailsObj.enabled = [];
+			ReminderEmailsObj.valueHours = [];
+			ReminderEmailsObj.notify = [];
+			ReminderEmailsObj.priority = [];
+			if ($.isArray(ReminderEmailsObj.arrEmailForms)) {
+				$.each(ReminderEmailsObj.arrEmailForms, function(idx, val) {
+					//get the radio buttons for each form
+					if ($('input:radio[name=radEmail_'+val.id+']:checked').val().toLowerCase()=='y')
+					{
+						//get the number of days for ReminderEmailsObj form
+						var txt = $('input:text[id=txtDaysEmail_'+val.id + ']');
+						txt.removeClass('highlightTextbox');
+						var t = txt.val();
+						if ($common_isNumber(t))
+						{ 
+							//get the notify for this form
+							var r = $('input:radio[name=radEmailNotify_'+val.id+']:checked').val();
+							ReminderEmailsObj.templateId.push(val.id);
+							ReminderEmailsObj.enabled.push(true);
+							ReminderEmailsObj.valueHours.push((t*24));
+							ReminderEmailsObj.notify.push(r.toLowerCase() == "y" ? true : false);
+							ReminderEmailsObj.priority.push("High");
+						}
+						else
+						{
+							txt.addClass('highlightTextbox');
+							alert("Number of days must be a number. ");
+							ReminderEmailsObj.errMsgString += "#Number of days must be a number. ";
+							ret = false;
+							return true; //exit this loop iteration
+						}
+					} 
+					else //this form will not have reminder emails sent ('n')
+					{
+						ReminderEmailsObj.templateId.push(val.id);
+						ReminderEmailsObj.enabled.push(false);
+						ReminderEmailsObj.valueHours.push(0);
+						ReminderEmailsObj.notify.push(false);
+						ReminderEmailsObj.priority.push("Normal");
+					}
+					switch (ReminderEmailsObj.serviceName) {
+						case("byAsset"):
+							var idArr = ReminderEmailsObj.customerIdList.split(",");
+							var idCeiling = 1;
+							if ($common_isNumber(ReminderEmailsObj.idListSize) && ReminderEmailsObj.idListSize > 0) {
+								idCeiling = Math.ceil(idArr.length/ReminderEmailsObj.idListSize);
+							}
+							for (var ixc=1;ixc<idCeiling+1;ixc++) {
+								tandemAjaxCalls += "ReminderEmailsObj.setIntervalOnReminderEmailForTrainingByAsset("+idx+","+idCeiling+","+ixc+")|";
+							}
+							break;
+						case("byCustomer"):
+							if (ReminderEmailsObj.assetType=="" || ReminderEmailsObj.assetType=="both") {
+								tandemAjaxCalls += "ReminderEmailsObj.setIntervalOnReminderEmailForTrainingByCustomer("+idx+",\"Course\")|";
+								tandemAjaxCalls += "ReminderEmailsObj.setIntervalOnReminderEmailForTrainingByCustomer("+idx+",\"CustomTraining\")|";
+							} else {
+								tandemAjaxCalls += "ReminderEmailsObj.setIntervalOnReminderEmailForTrainingByCustomer("+idx+",\"\")|";
+							}
+							break;
+						case("editOnly"):  //from groupTree wizard link to open Reminder Emails box
+							if (typeof $.reminderEmails_wizard_format == "function") $.reminderEmails_wizard_format(val.id);
+							break;
+						default:
+							break;
+					}
+				});  //end loop
+				//
+				if (ReminderEmailsObj.errMsgString.length>0) {
+					tandemAjaxCalls="";
+					this.tandemComplete();
+				} else {
+					if (typeof emVars != "undefined") { //we are on a page handling table rows
+						if (this.rownum=="0") {
+							//updating the options on all rows, show results all rows
+							tandemAjaxCalls += "openOptionsViewEachRow()|";
+						} else if (this.rownum!="") {
+							//updating the options on this row, show results this row
+							tandemAjaxCalls += "viewOptionsClicked(" + this.rownum + ")|";
+						}
+					}
+					makeTandemAjaxCalls.init();
+					makeTandemAjaxCalls.callString = tandemAjaxCalls + "ReminderEmailsObj.tandemComplete()";
+					makeTandemAjaxCalls.note = "reminderEmails";
+					if (makeTandemAjaxCalls.setup()) makeTandemAjaxCalls.callTandemAjax();
+				}
+				//
+			} else {ret = false};
+			return ret;
+		},
+		saveOptionsGroupTree: function(parmIdx) {
+				var parmObj = this.parmList[parmIdx];
+				var parms = {CustomerIdList: "\"" + parmObj.CustomerIdList + "\"",  
+							 CustomerType: "\"" + parmObj.CustomerType + "\"", 
+							 AssetIdList: "\"" + parmObj.AssetIdList + "\"",
+							 AssetTypeList: "\"" + parmObj.AssetTypeList + "\"",
+							 EmailTemplateIdList: "\"" + parmObj.EmailTemplateIdList + "\"",
+							 EnableReminder: (parmObj.EnableReminder) ? true : false,
+							 ValueInHours: parmObj.ValueInHours,
+							 NotifyManager: (parmObj.NotifyManager) ? true : false,
+							 Priority: "\"" + parmObj.Priority + "\"",
+							 ApplyUpdatesToSelf: true,
+							 CascadeChangesToChildren: false,
+							 TreeNodeId: parmObj.TreeNodeId,
+							 IsDefault: (parmObj.IsDefault) ? true : false
+						   };
+				if ($.trVars.debugMode=="on") {
+					msg="IN saveOptionsGroupTree\n" +
+							"\n\nCustomerIdList: " + parms.CustomerIdList + 
+							 "\nCustomerType: " + parms.CustomerType +
+							 "\nAssetIdList: "+parms.AssetIdList +
+							 "\nAssetTypeList: " + parms.AssetTypeList +
+							 "\n\nEmailTemplateIdList: " + parms.EmailTemplateIdList +
+							 "\nEnableReminder: " + parms.EnableReminder +
+							 "\nValueInHours: " + parms.ValueInHours + 
+							 "\nNotifyManager: " + parms.NotifyManager + 
+							 "\nPriority: " + parms.Priority + 
+							 "\nApplyUpdatesToSelf: " + parms.ApplyUpdatesToSelf +
+							"\nCascadeChangesToChildren: " + parms.CascadeChangesToChildren + 
+							"\nTreeNodeId: " + parms.TreeNodeId +
+							"\nIsDefault: " + parms.IsDefault;
+					if (!confirm(msg + "\n\nContinue?")) return false;
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Setting Reminder Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/SetIntervalOnReminderEmailForGroupTree",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if ($.trVars.debugMode=="on") alert("IN callback from SetInterval...GroupTree\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							//ReminderEmailsObj.errMsgString += ("<span style='color:green;'>Delete Email Reminders Successful.</span><br />")
+						} else {
+							$.handleErrorMsg("#Set GroupTree Email Reminders failed. msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						$.handleErrorMsg("Set Reminder Email Options. Return Invalid. msg." + jQuery.parseJSON(msg));
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		deleteAllEmailRemindersForTrainingByAsset: function() {
+				var custId = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerId;
+				var custType = (this.overrideCustType!="") ? this.overrideCustType : this.customerType;
+				var custIdList = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerIdList;
+
+				var parms = {CustomerId: custId, 
+							 CustomerType: "\"" + custType + "\"", 
+							 AssetIdList: "\"" + this.assetIdList + "\"",
+							 AssetType: "\"" + this.assetType + "\"",
+							 ApplyToChildren: this.applyToChildren
+						   };
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				if ((this.debugMode=="on")) {
+					msg="IN deleteAllEmailRemindersForTrainingByAsset\n" +
+							"\nCustomerId: " + parms.CustomerId + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\nAssetIdList: " + parms.AssetIdList + 
+							"\nAssetType:" + parms.AssetType + 
+							"\nApplyToChildren:" + parms.ApplyToChildren;
+					if (!confirm(msg)) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Deleting Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/DeleteAllEmailRemindersForTrainingByAsset",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") alert("IN callback from DeleteAllEmailRemindersForTrainingByAsset\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							//ReminderEmailsObj.errMsgString += ("<span style='color:green;'>Delete Email Reminders Successful.</span><br />")
+						} else {
+							ReminderEmailsObj.errMsgString += ("#Delete Email Reminders failed (by asset). msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in Delete Email Reminders (by asset): " + jQuery.parseJSON(msg));
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		deleteAllEmailRemindersForTrainingByCustomer: function() {
+				var custId = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerId;
+				var custType = (this.overrideCustType!="") ? this.overrideCustType : this.customerType;
+				var custIdList = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerIdList;
+				
+				var parms = {CustomerIdList: "\"" + custIdList + "\"", 
+							 CustomerType: "\"" + custType + "\""	,
+							 ApplyToChildren: this.applyToChildren 		 
+						   };
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				if ((this.debugMode=="on")) {
+					msg="IN deleteAllEmailRemindersForTrainingByCustomer\n" +
+							"\nCustomerIdList: " + parms.CustomerIdList + 
+							"\nCustomerType:" + parms.CustomerType + 
+							"\nApplyToChildren:" + parms.ApplyToChildren;
+					if (!confirm(msg)) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Deleting Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/DeleteAllEmailRemindersForTrainingByCustomer",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") alert("IN callback from DeleteAllEmailRemindersForTrainingByCustomer\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							//ReminderEmailsObj.errMsgString += ("<span style='color:green;'>Delete Email Reminders Successful.</span>")
+						} else {
+							ReminderEmailsObj.errMsgString += ("#Delete Email Reminders failed (customer). msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in Delete Email Reminders (customer): " + jQuery.parseJSON(msg));
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		deleteEmailReminderForTrainingByCustomerList: function(n,ceiling,ix) {
+				var custType = (this.overrideCustType!="") ? this.overrideCustType : this.customerType;
+				
+				var thisListOfIds = this.customerIdList;
+				//ix is the number of this chunk
+				if (ceiling>1) {
+					var idArr = thisListOfIds.split(",");
+					var start = (ix-1)*this.idListSize;
+					var end = (ix)*this.idListSize;
+					var newArray = idArr.slice(start,end);
+					thisListOfIds = newArray.join(",");
+				}
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				var parms = {CustomerIdList: "\"" + thisListOfIds + "\"", 
+							 CustomerType: "\"" + custType + "\"", 
+							 AssetId: this.assetId, 
+							 AssetType: "\"" + this.assetType + "\"" ,
+							 EmailTemplateId: this.arrEmailForms[n].id,
+							 ApplyToChildren: this.applyToChildren
+						   };
+				if ((this.debugMode=="on")) {
+					msg="IN deleteEmailReminderForTrainingByCustomerList\n" +
+							"\nThis is chunk #" + ix + " of " + ceiling + "\n" +
+							"\nAssetId: " + parms.AssetId + 
+							"\nAssetType:" + parms.AssetType +
+							"\nCustomerIdList: " + parms.CustomerIdList + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\n\nEmailTemplateId:" + parms.EmailTemplateId + 
+							"\nApplyToChildren:" + parms.ApplyToChildren;
+					if (!confirm(msg)) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Deleting Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/DeleteEmailReminderForTrainingByCustomerList",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") alert("IN callback from DeleteEmailReminderForTrainingByCustomerList\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							//ReminderEmailsObj.errMsgString += ("<span style='color:green;'>Delete Email Reminders Successful.</span>")
+						} else {
+							ReminderEmailsObj.errMsgString += ("#Delete Email Reminders failed (customerList). msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in Delete Email Reminders (customerList): " + jQuery.parseJSON(msg));
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		setIntervalOnReminderEmailForTrainingByAsset: function(n,ceiling,ix) {
+				var custType = (this.overrideCustType!="") ? this.overrideCustType : this.customerType;
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				var thisListOfIds = this.customerIdList;
+				//ix is the number of this chunk
+				if (ceiling>1) {
+					var idArr = thisListOfIds.split(",");
+					var start = (ix-1)*this.idListSize;
+					var end = (ix)*this.idListSize;
+					var newArray = idArr.slice(start,end);
+					thisListOfIds = newArray.join(",");
+				}
+				var isSelf = (this.isGlobalView) ? false : true;
+				var parms = {CustomerIdList: "\"" + thisListOfIds + "\"", 
+							 CustomerType: "\"" + custType + "\"", 
+							 AssetId: this.assetId, 
+							 AssetType: "\"" + this.assetType + "\"" ,  
+							 EmailTemplateId: this.templateId[n], 	 
+							 EnableReminder: this.enabled[n],		 
+							 ValueInHours: this.valueHours[n],		 
+							 NotifyManager: this.notify[n],
+							 Priority: "\"" + this.priority[n] + "\"",
+							 ApplyUpdatesToSelf: isSelf,
+							 CascadeChangesToChildren: this.applyToChildren	
+						   };
+				if ((this.debugMode=="on")) {
+					msg="IN setIntervalOnReminderEmailForTrainingByAsset\n" +
+							"\nThis is chunk #" + ix + " of " + ceiling + "\n" +
+							"\nAssetId: " + parms.AssetId + 
+							"\nAssetType:" + parms.AssetType +
+							"\nCustomerIdList: " + parms.CustomerIdList + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\n\nEmailTemplateId:" + parms.EmailTemplateId +
+							"\nEnableReminder:" + parms.EnableReminder +
+							"\nValueInHours:" + parms.ValueInHours +
+							"\nNotifyManager:" + parms.NotifyManager +
+							"\nPriority:" + parms.Priority +
+							"\nApplyUpdatesToSelf:" + parms.ApplyUpdatesToSelf +
+							"\nCascadeChangesToChildren:" + parms.CascadeChangesToChildren;
+					if (!confirm(msg)) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Setting Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/SetIntervalOnReminderEmailForTrainingByAsset",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") alert("IN callback from SetIntervalOnReminderEmailForTrainingByAsset\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							if (typeof $('#msgEmailOptions') != "undefined") {
+								$('#msgEmailOptions').html("");
+								$('#msgEmailOptions').hide();
+							}
+						} else {
+							ReminderEmailsObj.errMsgString += ("#Set Email Reminders failed (asset). msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in Set Email Reminders (asset): " + msg);
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						// unblock when remote call returns 
+					}
+				});
+		},
+		setIntervalOnReminderEmailForTrainingByCustomer: function(n,assetType) {
+				var custId = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerId;
+				var custType = (this.overrideCustType!="") ? this.overrideCustType : this.customerType;
+				var custIdList = (this.overrideCustIdList!="") ? this.overrideCustIdList : this.customerIdList;
+				if (typeof $('#msgEmailOptions') != "undefined") {
+					$('#msgEmailOptions').html("");
+					$('#msgEmailOptions').hide();
+				}
+				var f_AssetType = (assetType=="" ) ? this.assetType : assetType; //override obj assetType
+				var isSelf = (this.isGlobalView) ? false : true;  //we are deliberately applying to children only
+				var parms = {CustomerId: custId, 
+							 CustomerType: "\"" + custType + "\"", 
+							 AssetIdList: "\"" + this.assetIdList + "\"",
+							 AssetType: "\"" + f_AssetType + "\"",
+							 EmailTemplateId: this.templateId[n], 	 
+							 EnableReminder: this.enabled[n],		 
+							 ValueInHours: this.valueHours[n],		 
+							 NotifyManager: this.notify[n],
+							 Priority: "\"" + this.priority[n] + "\"",
+							 ApplyUpdatesToSelf: isSelf,
+							 CascadeChangesToChildren: this.applyToChildren							 
+						   };
+				if ((this.debugMode=="on")) {
+					msg="IN setIntervalOnReminderEmailForTrainingByCustomer\n" +
+							"\nCustomerId: " + parms.CustomerId + 
+							"\nCustomerType:" + parms.CustomerType +
+							"\nAssetIdList: " + parms.AssetIdList + 
+							"\nAssetType:" + parms.AssetType +
+							"\n\nEmailTemplateId:" + parms.EmailTemplateId +
+							"\nEnableReminder:" + parms.EnableReminder +
+							"\nValueInHours:" + parms.ValueInHours +
+							"\nNotifyManager:" + parms.NotifyManager+
+							"\nPriority:" + parms.Priority +
+							"\nApplyUpdatesToSelf:" + parms.ApplyUpdatesToSelf +
+							"\nCascadeChangesToChildren:" + parms.CascadeChangesToChildren;
+					if (!confirm(msg)) ReminderEmailsObj.debugMode="off";
+					showTesting(msg);
+				}
+				try {$.blockUI({message:this.setWaitMsg("Setting Email Options...")});} catch (e) {}
+				$.ajax({
+					url: "http://" + location.host + "/Services_LMS/EmailWs.asmx/SetIntervalOnReminderEmailForTrainingByCustomer",
+					global: false,
+					type: "POST",
+					cache: false,
+					data: (parms),
+					dataType: "json",
+					success: function(msg) {
+						if (ReminderEmailsObj.debugMode=="on") alert("IN callback from SetIntervalOnReminderEmailForTrainingByCustomer\n\n" + "callback msg." + msg);
+						if (msg.toLowerCase()=="success") {
+							if (typeof $('#msgEmailOptions') != "undefined") {
+								$('#msgEmailOptions').html("");
+								$('#msgEmailOptions').hide();
+							}
+						} else {
+							ReminderEmailsObj.errMsgString += ("#Error occurred in Set Email Reminders(customer). msg." + msg);
+						}
+						if (makeTandemAjaxCalls.status=="inProgress") {
+							makeTandemAjaxCalls.callTandemAjax();
+						} else  {
+							ReminderEmailsObj.tandemComplete();
+						}
+					},
+					error: function(msg) {
+						ReminderEmailsObj.errMsgString += ("#Error in Set Email Reminders (customer): " + msg);
+						ReminderEmailsObj.tandemComplete();
+					},
+					complete: function() {
+						//when remote call returns 
+					}
+				});
+		},
+		setWaitMsg: function(str) {
+				var h = "<div style='padding-top:3px;vertical-align:center;'><h1>" + 
+					"<img src='http://grainger.safetycertified.com/groupTree/images/ajax-loader-blue-pik.gif' align='middle'>&nbsp;" + str + "</h1></div>";
+				return h;
+			},
+		tandemComplete: function() {
+				handleEmailOptionsErrMsg(ReminderEmailsObj.errMsgString);
+				//handleEmailOptionsInfoMsg("");
+				this.overrideCustType = "";
+				this.overrideCustId = "";
+				this.overrideCustIdList = "";
+				this.parmList=[];
+				try {$.unblockUI();} catch (e) {}
+				try {
+					if ($.tandemAjaxCalls.status=="inProgress") {
+						$.tandemAjaxCalls.callTandemAjax();
+					}
+				} catch (e2) {}
+		},
+		translateLookupType: function(str) {
+				if (str.toLowerCase()=="company") {
+					return("These options were set at the company level");
+				} else if (str.toLowerCase()=="member") {
+					return("These options were set at the member level");
+				} else if (str.toLowerCase()=="reseller") {
+					return("These options were set at the parent company level");
+				} else if (str.toLowerCase()=="asset") {
+					return("These options were set at the course level");
+				} else if (str.toLowerCase().length>0) {
+					return("These options were set on <strong>" + str + "</strong>");
+				} else {
+					return("");
+				}
+		},
+		calculateDaysFromHours: function(hrs) {
+			var days = 0;  
+			try {days = Math.floor(hrs/24)} catch(e) {};
+			return days;
+		},
+		trialSiteRoadblock: function(showMsg) {
+			if (location.host.toLowerCase().indexOf("-demo") > 0 || location.host.toLowerCase().indexOf("-trial") > 0 ) {
+				if (showMsg) {
+					alert("This functionality has been disabled in the Trial version of Safety Manager.\n\nYou will find fully enabled reminder emails in the production site for Safety Manager.");
+				}
+				return true;
+			}
+			return false;
+		}
+	};
+	
+	$(document).ready(function() {
+            $.urlEmailParam = function(name) {
+                var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (!results) { return 0; }
+                return results[1] || 0;
+            }
+			/* Get querystring parms */
+			var d = $.urlEmailParam("debug");
+			if (d=="1" || d=="true" || d=="y" || d=="yes") {
+				ReminderEmailsObj.debugMode = "on";
+				$('#showTest').show();
+			}
+			d="no";
+			d = $.urlEmailParam("ajaxdebug");
+			if (d=="1" || d=="true" || d=="y" || d=="yes") {
+				makeTandemAjaxCalls.debugMode = "on";
+				$('#showTest').show();
+			}
+	});
+	
+	function handleEmailOptionsErrMsg(str) {
+			if (str.length>0 && ReminderEmailsObj.action!="get") alert(str.replace(/#/g,"\n"));
+			if (str.length==0 && ReminderEmailsObj.action!="get" && ReminderEmailsObj.serviceName.indexOf("editOnly")<0) {
+				//alert(ReminderEmailsObj.action + " Email Reminders Action Successful");
+				ReminderEmailsObj.errMsgString += ("<span style='color:green;font-weight:bold;'>" + ReminderEmailsObj.action + " Email Reminders Action Successful.</span><br />");
+			}
+			try {
+				if (makeTandemAjaxCalls.status=="inProgress") makeTandemAjaxCalls.abortTandem();
+			} catch (herrmsg) {}
+			try { $(ReminderEmailsObj.errMsgDivId).html(ReminderEmailsObj.errMsgString.replace(/#/g,"<br />")); } catch (ee) {};
+			try {$.unblockUI();} catch (unblockerr) {}
+			ReminderEmailsObj.errMsgString = "";
+		}
+	function handleEmailOptionsInfoMsg(str) {
+		try { $(ReminderEmailsObj.errMsgDivId).html(str); } catch (ee) {};
+	}
+		
+	var makeTandemAjaxCalls = {
+		callString : "",
+		callArray : "",
+		numcalls : 0,
+		thiscall : 0,
+		status: "init",
+		aborted : false,
+		errmsg : "",
+		note: "",
+		debugMode: "off",
+		statArr : new Array("init","inProgress","aborted","finished"),
+		abortTandem : function(msg) {
+			this.errmsg = msg;
+			this.status = this.statArr[2];  //aborted
+			this.aborted = true;
+		},
+		init : function() {
+			this.note = "";
+			this.callString = "";
+			this.callArray = "";
+			this.numcalls = 0;
+			this.thiscall = 0;
+			this.errmsg = "";
+			this.status = this.statArr[0]; //init
+			this.aborted = false;
+			$.unblockUI();
+		},
+		setup : function() {
+			if ((this.callString.length>0) && (!this.aborted)) {
+				this.callArray = this.callString.split("|");
+				this.numcalls = this.callArray.length;
+				//alert("Testing\n\najxcalls: " + this.numcalls + "\n\n" + this.callString);
+				this.thiscall = 0;
+				return true;
+			} else { return false; }
+		},
+		callTandemAjax : function() {
+			if (!this.aborted) {
+				this.status = this.statArr[1]; //inProgress
+				this.thiscall = this.thiscall+1;
+				if (this.thiscall > this.numcalls) {
+					this.status = this.statArr[3]; //finished
+				}
+				if ((this.numcalls>0) && (this.thiscall <= this.numcalls)) {
+					//Testing alert:
+					if (this.debugMode == "on") {
+						msg="TANDEM CALLS :" + this.thiscall + "\n\n" +this.callArray[this.thiscall-1];
+						if (!confirm(msg + "\n\nCONTINUE TO DISPLAY TANDEM AJAX DEBUG POPUPS?")) this.debugMode="off";
+						showTesting(msg);
+					}
+					try {
+						if (this.callArray[this.thiscall-1].length>0) {
+							eval(this.callArray[this.thiscall-1]);
+						}
+					} catch (tajaxerr) {
+						alert("Error occurred attempting to execute: " + this.callArray[this.thiscall-1] + "\n" + tajaxerr.description);
+						this.abortTandem("Error in callAjax attempting to execute: " + this.callArray[this.thiscall-1] + "\n" + tajaxerr.description);
+						//if (tandemAjaxCalls.note=="thisnote") //dosomething();
+						$.unblockUI();
+					}
+
+				} else {
+					//finished
+					$.unblockUI();
+				}
+			}
+		}
+	}
+	
+	function showTesting(str) {
+		$('#testingMsg').html($('#testingMsg').html()+"<hr />"+str.replace(/\n/g,"<br />"));
+	}
+
+	</script>
+	<div id="divasset_EmailOptions" style="display:none;">[form goes here]
+	</div>
+	<div id="EmailOptions_HtmlTemplate" style="display:none;">
+	<fieldset class="fldset100">
+	<legend><strong> #EmailOptionsLabel </strong></legend>
+	<div  class="div100">
+		<input type="radio" name="radEmail_#EmailId" value="N" id="radEmail_NA_#EmailId" checked  onclick="ReminderEmailsObj.toggleEmailFieldset('#EmailId')" />
+		<label for="radEmail_NA_#EmailId">Do not send #EmailOptionsLabel</label>
+	</div>
+	<div class="div101">
+		<input type="radio" name="radEmail_#EmailId" value="Y" id="radEmail_Send_#EmailId"  onclick="ReminderEmailsObj.toggleEmailFieldset('#EmailId')" />
+				<label for="radEmail_Send_#EmailId">#EmailOptionsLabel1:</label>
+		<div class="divIdent">
+			<input type="text" id="txtDaysEmail_#EmailId" size="5" maxlength="2" value="#EmailOptionsDaysValue" disabled /> #EmailOptionsLabel2<br />
+			Notify Manager on File: <input type="radio" name="radEmailNotify_#EmailId" id="radEmailNotify_Y_#EmailId" value="Y" checked disabled> 
+				<label for="radEmailNotify_Y_#EmailId">Yes<label>
+			<input type="radio" name="radEmailNotify_#EmailId" id="radEmailNotify_N_#EmailId" value="N" disabled> 
+				<label for="radEmailNotify_N_#EmailId">No</label>
+		</div>
+	</div>
+	</fieldset>
+	<div style="height:13px;"></div>
+	</div><!-- //EmailOptions_HtmlTemplate -->
+	<div id="divEmailReporting" style="display:none;"></div>
+	<span id="showTest" onclick="javascript:$('#testingMsg').toggle();" style="display:none;color:blue;text-decoration:underline;">show calls</span>
+	<div id="testingMsg" title="testing messages here" style="display:none;width:400px;"></div>
+<!-- =============================
+     End Reminer Email Forms
+	 ============================ -->

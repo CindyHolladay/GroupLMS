@@ -1,0 +1,324 @@
+    <link rel="stylesheet" type="text/css" href="/dhtmlxTree_PRO/dhtmlxTree/codebase/dhtmlxtree.css">
+	<link rel="stylesheet" type="text/css" href="/dhtmlxTree_PRO/dhtmlxMenu/codebase/skins/dhtmlxmenu_dhx_skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/groupTree/groupTree.css">
+	<script type="text/javascript" src="http://www.safetycertified.com/scripts/thirdparty/jquery-1.4.2.min.js"></script>
+	<script type="text/javascript" src="/groupTree/groupTree.js"></script>
+	<script type="text/javascript" src="/groupTree/groupTreeGetAssets.js"></script>	
+	<script type="text/javascript" src="/groupTree/groupTreeHandleTemplates.js"></script>
+	<script type="text/javascript" src="/common/commonObjects.js"></script>	
+		<script type="text/javascript" src="/common/plugins/jquery.blockUI.js"></script>	
+	<!-- jQuery datepicker -->
+ <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+ 	<!-- dhtmlxTree: -->
+    <script src="/dhtmlxTree_PRO/dhtmlxTree/codebase/dhtmlxcommon.js"></script>
+    <script src="/dhtmlxTree_PRO/dhtmlxTree/codebase/dhtmlxtree.js"></script> 
+<!-- this is for processing json: -->
+<script  src="/dhtmlxTree_PRO/dhtmlxTree/codebase/ext/dhtmlxtree_json.js"></script>
+<!-- this is for sorting: -->
+<script  src="/dhtmlxTree_PRO/dhtmlxTree/codebase/ext/dhtmlxtree_sb.js"></script>
+<!-- these 2 are for the context menu -->
+<script language="JavaScript" src="/dhtmlxTree_PRO/dhtmlxMenu/codebase/dhtmlxmenu.js"></script>
+<script language="JavaScript" src="/dhtmlxTree_PRO/dhtmlxMenu/codebase/ext/dhtmlxmenu_ext.js"></script>
+RightClick on an item in the list below to activate context menu:<br />
+<span id="divTreeMsg" style="color:red;">Please wait while the object is loading...</span><br />
+	<div id="divTreeHorizMenu" style="display:none;">
+
+	</div>
+		<div id="treeBoxContainer">
+			<div id="treeBox"></div>
+		</div>
+	<div id="divasset_schedule" style="display:none;">
+			<fieldset style="margin-top:-5px;width:400px;padding:5px;padding-top:0px;">
+				<legend>&nbsp; <strong>Schedule Training Due Date</strong>&nbsp; </legend>
+				<br />
+				<span>Schedule the selected item to be due on this date:</span>
+				<br /><br />
+				<strong>Due Date:</strong>&nbsp;
+				<input type="text"  class="altRowColor" id="txtDueDate" name="txtDueDate" onchange="editDate(this)" value="" size="15"><img src="/groupTree/images/date.png" onclick="document.getElementById('txtDueDate').focus()"> 
+			</fieldset><br />
+			<img src="/common/images/pixel.gif" height="15" width="1" style="background:white;"><br />
+			<fieldset style="margin-top:7px;padding:5px;width:400px;height:300px;">
+				<legend> &nbsp;<strong>Setup a Recurring Training Schedule</strong> &nbsp;</legend>
+				<br />
+				<span>The selected item will be re-assigned base on this schedule:</span>
+				<br />
+				<table id="tblScheduleTraining" name="tblScheduleTraining" cellspacing="0" style="margin-top:5px;margin-left:15px;">
+				<tr><td colspan="2" style="padding-left:5px;"><input type="radio" name="radRecur" id="radRecur1" value="onetime" checked onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+					<label for="radRecur1">N/A selected training is one-time</label>
+					</td>
+				</tr>
+				<tr><td colspan="2" style="padding-left:5px;"><input type="radio" name="radRecur" id="radRecur2" value="annual"  onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'));document.getElementById('txtRecurDate').disabled='';$.SetRecurDateTextBox(document.getElementById('txtDueDate').value); ">
+					<label for="radRecur2">Annually Recurring</label><input type="text" class="altRowColor" id="txtRecurDate" style="margin-left:5px;" onchange="editDate(this)" value="" size="12" disabled="disabled"><img src="/groupTree/images/date.png" onclick="document.getElementById('txtRecurDate').focus()">
+					</td>
+				</tr>				
+				<tr><td colspan="2" style="padding-left:5px;"><input type="radio" name="radRecur" id="radRecur4" value="annuallycompleted" style="margin-top:2px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+					<label for="radRecur4">Annually Recurring from Training Completion Date</label>
+					</td>
+				</tr>
+				<tr><td colspan="2" style="padding-left:5px;"><input type="radio" name="radRecur" id="radRecur3" value="semiannual" style="margin-top:2px;margin-bottom:3px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+					<label for="radRecur3">Semi-Annually Recurring</label> (due Jan 1, July 1)
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<div style="padding-top:10px;">
+							<fieldset style="margin-top:3px;height:120px; width:300px;padding:3px;padding-top:0px;">
+							<legend>&nbsp; Annually Recurring on the Quarter&nbsp; </legend>
+							<div >
+								<div style="display:inline;position:absolute;margin-top:3px;width:75px;  border-right-width:thin 1px; border-right-color:#EEEEEE; border-right-style:solid;">
+								
+									<input type="radio" name="radRecur" id="radRecur5" value="q1" style="margin-bottom:3px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+									<label for="radRecur5" >Q1</label><br/>	
+									<input type="radio" name="radRecur" id="radRecur6" value="q2" style="margin-bottom:3px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+									<label for="radRecur6" >Q2</label><br/>
+									<input type="radio" name="radRecur" id="radRecur7" value="q3" style="margin-bottom:3px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+									<label for="radRecur7" >Q3</label><br/>
+									<input type="radio" name="radRecur" id="radRecur8" value="q4" style="margin-bottom:3px;" onclick="$.resetRadioOptions(document.getElementById('txtRecurDate'))">
+									<label for="radRecur8" >Q4</label>							
+								
+								</div>	
+								
+								<div style="float:right;position:static;height:35px;align:center;margin-top:10px;padding-right:50px;">
+								<div>
+									<input type="checkbox" name="radRecurQtrly" id="radRecurQtrly" value="quarterly" onclick="$.ClearRadioBox('radRecur');document.getElementById('txtRecurDate').disabled=true;$.lookAtQuarterly();">
+									<label for="radRecurQtrly" >Recur on every quarter</label>
+								</div>
+								<div style="margin-top:5px;">
+								<input type="radio" name="radRecurQtr" id="radRecurQuarterly_begin" value="begin" style="margin-bottom:2px;" onclick="$.lookAtQuarterly();">
+								<label for="radRecurQuarterly_begin" >Use 1st day of Quarter</label>
+								</div>
+								<div>
+								<input type="radio" name="radRecurQtr" id="radRecurQuarterly_end" value="end"  style="margin-bottom:2px;" onclick="$.lookAtQuarterly();">
+								<label for="radRecurQuarterly_end" >Use last day of Quarter</label>
+								</div>
+								</div>
+							</div>
+						</div>
+					</td>
+				</tr>
+			</table>
+			</fieldset>
+		<table style="margin-left:20px;margin-top:10px;" cellpadding="3">
+		<tr><td><input type="button" id="btnSchedule" name="btnSchedule" value="Schedule" onclick="$.scheduleTraining()">
+			</td><td><input type="button" id="btnScheduleWizard" style="display:none;" name="btnScheduleWizard" value="Save Schedule" onclick="scheduleWizardClicked()">
+			</td><td><input type="button" id="btnScheduleCancel" name="btnScheduleCancel" value="Cancel" onclick="toggleDiv('')">
+			</td></tr>
+		</table>
+	</div>
+	<div id="divasset_profile" style="display:none;">
+		<span id="spResellerCompany"></span>
+		<iframe id="ifrProfile" width="450" height="470" src="" frameborder="0" frameborder="none" border="0" border="none"></iframe>
+	</div>
+	<div id="divasset_copy" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend> &nbsp;<strong>Copy</strong>&nbsp; </legend>
+			<div id="divasset_copyGroupQuestion" style="display:none;">
+			<br />
+			Folder Copy options:<br /><br />
+			<input style="margin-left:12px;" type="radio" name="radCopyFolderOptions" id="radCopyFolderAll" checked>Copy the folder name and all of its contents<br />
+			<input style="margin-left:12px;" type="radio" name="radCopyFolderOptions" id="radCopyFolderContents">Copy the contents of this folder only<br />
+			</div><br />
+			<p>
+			Please select the destination folder group in the tree, <br />then click "Paste"
+			</p><br />
+			<div style="text-align:right;padding-right:20px;">
+			<input type="button" name="btnCopyPaste" id="btnCopyMove" value="Paste" onclick="$.checkTokens('copy','')" />&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnCopyCancel" value="Cancel" onclick="$.copyCancel()" /><br />
+			</div>
+		</fieldset>
+	</div>
+	<div id="divasset_move" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend>&nbsp; <strong>Move</strong>&nbsp;</legend>
+			<div id="divasset_moveGroupQuestion" style="display:none;"><br />
+			Folder Move options:<br /><br />
+			<input style="margin-left:12px;" type="radio" name="radMoveFolderOptions" id="radMoveFolderAll"checked>Move the folder name and all of its contents<br />
+			<input style="margin-left:12px;" type="radio" name="radMoveFolderOptions" id="radMoveFolderContents">Move the contents of this folder only<br />
+			</div><br />
+			<p>
+			Please select the destination folder group in the tree,<br />then click "Drop"
+			</p><br />
+			<div style="text-align:right;padding-right:20px;">			
+			<input type="button" name="btnDropMove" id="btnDropMove" value="Drop" onclick="$.checkTokens('move','')" />&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnMoveCancel" value="Cancel" onclick="$.moveItemsCancel()" />
+			</div>
+	</div>
+	<div id="divasset_Group_Add" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend> &nbsp;<strong>Add Assignment Folder</strong>&nbsp; </legend>
+		<br />
+		Enter new folder name:<br />
+		<input type="text" name="txtGroup_Add" id="txtGroup_Add" size="40" /><br />
+		<div style="text-align:right;padding-right:20px;">	<br />
+		<input type="button" name="btnAddFolder" id="btnAddFolder" value="Add" onclick="$.addFolder()" />&nbsp;&nbsp;&nbsp;
+		<input type="button" name="btnAddFolderCancel" value="Cancel" onclick="toggleDiv('')" />
+		</div>
+		<p>Note: Course and document assignments are made by placing member Trainees, courses and documents within this assignment folder. </p>
+		<p>Once you have added this folder, right-click on its name in the tree to add courses and trainees.</p>
+		<p>You may create child folders to create an assignment hierarchy. Courses in parent folders will cascade their 
+			assignments to members in child folders.</p>
+		</fieldset>
+	</div>
+	<div id="divasset_AssetGroup_Add" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend> &nbsp;<strong>Add Group of Courses</strong>&nbsp; </legend>
+		<br />
+				Enter Group Name:
+		<input type="text" name="txtAssetGroup_Add" id="txtAssetGroup_Add" size="40" /><img src="/groupTree/images/custom/groupAsset.png">&nbsp;&nbsp;<br />
+		<div style="text-align:right;padding-right:20px;">	<br />
+		<input type="button" name="btnAddNamedGroup" id="btnAddNamedGroup" value="Add" onclick="$.addNamedGroup('Asset')" />&nbsp;&nbsp;&nbsp;
+		<input type="button" name="btnAddNamedCancel" value="Cancel" onclick="toggleDiv('')" />
+		</div>
+		<p>
+		Note: You will be able to add online courses and shared documents to this group. Select "Assign Course" and "Assign Document" 
+		from the context menu for this group folder.
+		</p>
+		<p>This training will be assigned to members in the Trainee Groups 
+			you have also added at this same level in the tree.
+		</p>
+		<p>
+			In addition, training you add to this folder will be assigned to members in any child folders 
+				you have created below this level in the tree.
+		</p>
+		<p>Select "Set Training Schedule" from the context menu to perform these functions:<br />
+			Set the due date for completion of the courses in this folder.<br />
+			Set recurring due date schedules for the courses in this folder.<br />
+		</p>
+		</fieldset>
+	</div>
+	<div id="divasset_MemberGroup_Add" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend> &nbsp;<strong>Add Group of Trainees</strong>&nbsp; </legend>
+		<br />
+				Enter Group Name:
+		<input type="text" name="txtMemberGroup_Add" id="txtMemberGroup_Add" size="40" /><img src="/groupTree/images/custom/groupMember.png">&nbsp;&nbsp;<br />
+		<div style="text-align:right;padding-right:20px;">	<br />
+		<input type="button" name="btnAddNamedGroup" id="btnAddNamedGroup" value="Add" onclick="$.addNamedGroup('Member')" />&nbsp;&nbsp;&nbsp;
+		<input type="button" name="btnAddNamedCancel" value="Cancel" onclick="toggleDiv('')" />
+		</div>
+		<p>
+		Note: You will be able to add member trainees to this group. Select "Assign Trainee" 
+		from the context menu for this group folder.
+		</p>
+		<p>Any training you have assigned to Course Group folders at this same level in the tree, will
+			be assigned to these trainees.
+		</p>
+		<p>
+			In addition, any training in Course Group folders in a higher level of the tree will be 
+				assigned to these trainees by inheritance.
+		</p>
+		<p>Select "Set Training Schedule" from the context menu to perform these functions:<br />
+			Set the due date for completion of courses for these trainees.<br />
+			Set recurring due date schedules for courses to these trainees.<br />
+			Note: Due dates and schedules set at the trainee level override schedules set 
+				at any other level.
+		</p>
+		<p>
+		To view a complete profile of training for a selected Trainee, select "View Profile" from the context menu on a trainee's name.
+		</p>
+		</fieldset>
+	</div>
+	<div id="divasset_Group_Search" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend>&nbsp;<strong>Search</strong>&nbsp;</strong></legend>
+		<p>
+		Enter keyword:<br />
+		<input type="text" name="txtGroup_Search" id="txtGroup_Search" size="35" /><br />
+		</p>
+		<div style="text-align:right;padding-right:20px;">	<br />
+		<input type="button" name="btnSearchTree" id="btnSearchTree" value="Search" onclick="$.searchTree()"/> &nbsp;
+		<input type="button" name="btnSearchCancel" value="Cancel" onclick="toggleDiv('')" />
+		</div>
+		</fieldset>
+	</div>
+	<div id="divasset_Group_Rename" style="display:none;">
+		<fieldset style="margin-top:-5px;width:350px;padding:5px;padding-top:0px;">
+		<legend>&nbsp;<strong>Rename Folder</strong>&nbsp;</strong></legend>
+		<p>
+		Enter new folder name:<br />
+		<input type="text" name="txtGroup_Rename" id="txtGroup_Rename" size="35" />
+		</p>
+		<div style="text-align:right;padding-right:20px;">	<br />
+		<input type="button" name="btnRenameFolder" id="btnRenameFolder" value="Rename" onclick="$.renameGroup()"/>&nbsp;
+				<input type="button" name="btnSearchCancel" value="Cancel" onclick="toggleDiv('')" />
+		</div>
+	</div>
+	<!-- divasset_Member -->
+	<div id="divasset_Member" style="display:none;">
+		<input type="button" name="btnAddMember" id="btnAddMember" value="Assign Members" onclick="$.checkTokens('add','Member')" />&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnAddMemberCancel" value="Cancel" onclick="toggleDiv('')" />
+			<input style="margin-left:65px;" type="text" name="txtMemberKeyword" id="txtMemberKeyword" size="10">
+			<img src="/groupTree/images/srch_16x16.gif" title="Search member names" style="cursor:pointer;" onclick="getSearchMembers()">
+		<div class="assetDiv">
+			<div class="hdr" id="divMemberCompIdentifier"><span style="cursor:pointer;" onclick="openCompanyWindow1()"><img src="/groupTree/images/open_16x16.gif" title="view company profile" border="0" style="margin-left:3px;"></span> 
+			<span id="spMemberCompany"></span></div>
+			<table cellpadding="4" cellspacing="0" width="100%"><tr><td>Training tokens remaining: <span id="spUCC">0</span></td>
+				<td style="text-align:right;padding-right:5px;"><span class="link" onclick="checkCbx('Member')">check all</span> | <span class="link" onclick="clearCbx('Member')">clear all</span></td>
+				</tr></table>
+			<div id="divMemberList"></div>
+		</div>
+	</div><!-- /divasset_Member -->
+	<!-- divasset_Document -->
+	<div id="divasset_Document" style="display:none;">
+		<input type="button" name="btnAddDocument" id="btnAddDocument" value="Assign Documents" onclick="$.addAsset('Document')" />&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnAddDocumentCancel" value="Cancel" onclick="toggleDiv('')" />
+		<div class="assetDiv">
+			<div class="hdr" id="divDocumentCompIdentifier"><span id="spDocumentCompany"></span></div>
+			<div style="text-align:right;padding-right:5px;"><span class="link" onclick="checkCbx('Document')">check all</span> | <span class="link" onclick="clearCbx('Document')">clear all</span></div>
+			<div  style="margin-top:5px;" id="divDocumentList"></div>
+		</div>
+	</div><!-- /divasset_Document -->
+	<!-- divasset_Course -->
+	<div id="divasset_Course" style="display:none;">
+		<input type="button" name="btnAddCourse" id="btnAddCourse" value="Assign Courses" onclick="$.checkTokens('add','Course')" />
+		&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnAddCourseCancel" value="Cancel" onclick="toggleDiv('')" />&nbsp;&nbsp;&nbsp;
+			<input style="margin-left:65px;" type="text" name="txtCourseKeyword" id="txtCourseKeyword" size="10">
+			<img src="/groupTree/images/srch_16x16.gif" title="Search course listing" style="cursor:pointer;" onclick="getCourseListing()">
+		<div class="assetDiv">
+			<div class="hdr">
+			&nbsp;All&nbsp;<input type="checkbox" name="cbxAllCourses" id="cbxAllCourses" value="all" onclick="if (this.checked) checkCbx('Course'); else clearCbx('Course'); ">
+			<strong>Course Listing:</strong>
+
+			</div>
+			<div style="margin-top:5px;" id="divCourseList"></div>
+		</div>
+	</div><!-- /divasset_Course -->
+	<!-- divasset_Company -->
+	<div id="divasset_Company" style="display:none;">
+		<input type="button" name="btnAddCompany" id="btnAddCompany" value="Assign Company Members" onclick="$.checkTokens('add','Company')" />
+		&nbsp;&nbsp;&nbsp;
+			<input type="button" name="btnAddCompanyCancel" value="Cancel" onclick="toggleDiv('')" /><br />
+		<span style="font-size:12px;">This assignment will include all active members for the selected company</span>
+		<div class="assetDiv">
+			<div class="hdr"><strong>Company Listing:</strong>&nbsp;&nbsp;&nbsp;&nbsp;
+			<span class="link" style="color:white;font-weight:normal;" onclick="checkCbx('Company')">check all</span> | <span class="link" style="color:white;font-weight:normal;" onclick="clearCbx('Company')">clear all</span></div>
+			<div  style="margin-top:5px;" id="divCompanyList"></div>
+		</div>
+	</div><!-- /divasset_Company-->
+	<!-- divasset_ResellerCompany -->
+	<div id="divasset_ResellerCompany" style="display:none;">
+		<div class="assetDiv">
+			<div class="hdr"><strong>Company Profiles:</strong>&nbsp;&nbsp;&nbsp;&nbsp;</div>
+			<div id="divResellerCompanyList"></div>
+		</div>
+	</div><!-- /divasset_ResellerCompany-->
+<div id="divDebugJsonLoad"></div>
+<script type="text/javascript">
+function loadCompanyEdit(compId) {
+	document.getElementById("ifrEditCompanyTree").src="/groupTree/tree.asp?cid="+compId+"&type=company&context="+$.trVars.appContext;
+	document.getElementById("divEditCompanyTree").style.display="block";
+}
+function closeCompanyEdit() {
+	document.getElementById("divEditCompanyTree").style.display="none";
+}
+</script>
+	<div id="divEditCompanyTree" style="display:none;position:absolute;top:90px;left:125px;z-index:999;">
+		<div style="background:#cc0000;padding:5px;color:white;width:910px;"><div style="padding:5px;float:left;"><strong>Edit Company Tree</strong></div>
+		<div style="cursor:pointer;float:right;" onclick="closeCompanyEdit()">[close]</div><br />
+		<div style="clear:both;" />
+		<iframe id="ifrEditCompanyTree" width="900" height="650" src="" frameborder="0" frameborder="none" style="margin-left:4px;border:2px solid #000000;background:white;"></iframe>
+		</div>
+	</div>
+
